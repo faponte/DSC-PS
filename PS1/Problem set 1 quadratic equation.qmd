@@ -1,16 +1,32 @@
 ---
 title: "Problem set 1: Quadratic equation"
 author: "Frances Aponte"
-#format: html
-format: pdf
-output:
-  pdf_document:
-    latex_engine: xelatex
-editor: visual
+format: html
+# format: pdf
+# output:
+#   pdf_document:
+#     latex_engine: xelatex
+# editor: visual
 ---
 
-## Excercise 5
-Erase the PDF report and reproduce it but this time using $a=1,b=3,c=2$. Change the range of x to range that clearly shows the roots.
+## Excercise 6
+
+Create a markdown page with the results for this last set of values, but this time showing the code.
+
+## Lesson: Quadratic Equation
+
+* **Definition:** is a polynomial equation of a second degree, it is expressed as  $f(x)=ax^2+bx+c=0$ where a, b and c are the numerical coefficients. 
+
+* **Solution:** the solution of a quadratic equation is called the roots or zeros, and they can be found with the following formula $x=\frac{-b \pm \sqrt{b^2-4ac}}{2a}$ in which $b^2-4ac$ is the discriminant. 
+
+* **Discriminant:** The discriminant helps to identify how many solutions the equation will have and if the solutions are real or complex. 
+  + If the discriminant is greater than 0 (positive) there are 2 real roots. 
+  + If the discriminant is equal to 0 (zero) there is 1 repeated root.
+  + If the discriminant is less than 0 (negative) there is no real roots. 
+
+**How to apply the quadratic equation?**
+
+***First*** we must define the variables a, b and c. *Note:* Use a different name for c as c is a predefined function in R. 
 
 ```{r Define variables}
 a=1
@@ -19,8 +35,12 @@ b=3
 k=2
 ```
 
+{{< pagebreak >}}
+
+***Second***, we have to determine if the quadratic equation have real solutions using the discriminant. 
+
 ```{r real solutions}
-#To determine if the quadratic equation have real solutions we use the discriminant. 
+
 real_soln<-b^2-4*a*k
 
 if (real_soln>=0){
@@ -33,9 +53,14 @@ if (real_soln>=0){
 } else {
   cat("No real solutions. \n")
 }
-```
 
-```{r Graph, echo=FALSE}
+roots<-c(soln_1,soln_2)
+```
+{{< pagebreak >}}
+
+***Third***, now that we have the solution, we can graph the equation solution.
+
+```{r Graph}
 library (ggplot2)
 x<-seq(-4,1) #values for x
 y<-a*x^2+b*x+k #values for y
@@ -47,15 +72,14 @@ ggplot(
   geom_line(color = "blue") + 
   #an horizontal line in the origin
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") + 
+  #include the roots points
+  geom_point(data = data.frame(x = roots, y = rep(0, length(roots))), 
+             color = "green", size = 3) +
   #graph labeling
   labs(title = "Quadratic Equation Graph",
        x = "x",
-       y = "f(x)")
+       y = "f(x)") +
+  #modify y axis
+  ylim(c(-1, max(y)))
 
 ```
-
-
-
-
-
-
