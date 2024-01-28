@@ -9,14 +9,14 @@ output:
 editor: visual
 ---
 
-## Excercise 4
-Erase the PDF report and reproduce it but this time using $a=1,b=2,c=5$.
+## Excercise 5
+Erase the PDF report and reproduce it but this time using $a=1,b=3,c=2$. Change the range of x to range that clearly shows the roots.
 
 ```{r Define variables}
 a=1
-b=2
+b=3
 # c will be called k
-k=5
+k=2
 ```
 
 ```{r real solutions}
@@ -37,7 +37,7 @@ if (real_soln>=0){
 
 ```{r Graph, echo=FALSE}
 library (ggplot2)
-x<-seq(-3,3) #values for x
+x<-seq(-4,1) #values for x
 y<-a*x^2+b*x+k #values for y
 
 ggplot(
