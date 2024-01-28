@@ -9,14 +9,14 @@ output:
 editor: visual
 ---
 
-## Excersise 1 
-Defines variables $a=1, b=-1,c=-2$ and print out the solutions to $f(x)=ax^2+bx+c=0$.Do not report complex solutions, only real numbers. Avoid using the variable name c as it is a reserved function in R. Show the code and the answer.
+## Excercise 4
+Erase the PDF report and reproduce it but this time using $a=1,b=2,c=5$.
 
 ```{r Define variables}
 a=1
-b=-1
+b=2
 # c will be called k
-k=-2
+k=5
 ```
 
 ```{r real solutions}
@@ -34,10 +34,6 @@ if (real_soln>=0){
   cat("No real solutions. \n")
 }
 ```
-
-## Excercise 2
-
-Show a graph of $f(x)$ versus x for $x \in (-3,3)$. Do not show the code, only the graph.
 
 ```{r Graph, echo=FALSE}
 library (ggplot2)
@@ -57,21 +53,6 @@ ggplot(
        y = "f(x)")
 
 ```
-
-## Excercise 3
-
-Generate a PDF report.
-
-To do it i modified the yaml to 
-
-title: "Problem set 1: Quadratic equation"
-author: "Frances Aponte"
-format: pdf
-output:
-  pdf_document:
-    latex_engine: xelatex
-editor: visual
-
 
 
 
