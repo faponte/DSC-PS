@@ -1,11 +1,11 @@
 ---
 title: "Problem set 1: Quadratic equation"
 author: "Frances Aponte"
-fromat: html
-##format: pdf
-##output:
-  ##pdf_document:
-    ##latex_engine: xelatex
+#format: html
+format: pdf
+output:
+  pdf_document:
+    latex_engine: xelatex
 editor: visual
 ---
 
@@ -71,17 +71,6 @@ output:
   pdf_document:
     latex_engine: xelatex
 editor: visual
-
-```{r}
-quarto::render("Problem set 1: Quadratic equation.qdm", output_dir = "output_directory", output_format = "pdf_document")
-```
-
-
-
-## Excercise 4
-Erase the PDF report and reproduce it but this time using $a=1,b=2,c=5$.
-
-
 
 
 
