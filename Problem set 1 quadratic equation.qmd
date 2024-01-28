@@ -1,0 +1,91 @@
+---
+title: "Problem set 1: Quadratic equation"
+author: "Frances Aponte"
+fromat: html
+##format: pdf
+##output:
+  ##pdf_document:
+    ##latex_engine: xelatex
+editor: visual
+---
+
+## Excersise 1 
+Defines variables $a=1, b=-1,c=-2$ and print out the solutions to $f(x)=ax^2+bx+c=0$.Do not report complex solutions, only real numbers. Avoid using the variable name c as it is a reserved function in R. Show the code and the answer.
+
+```{r Define variables}
+a=1
+b=-1
+# c will be called k
+k=-2
+```
+
+```{r real solutions}
+#To determine if the quadratic equation have real solutions we use the discriminant. 
+real_soln<-b^2-4*a*k
+
+if (real_soln>=0){
+  soln_1<-(-b+sqrt(real_soln)/2*a)
+  soln_2<-(-b-sqrt(real_soln)/2*a)
+  
+  cat("Real Solutions: \n")
+  cat("x =", soln_1, "\n")
+  cat("x =", soln_2, "\n")
+} else {
+  cat("No real solutions. \n")
+}
+```
+
+## Excercise 2
+
+Show a graph of $f(x)$ versus x for $x \in (-3,3)$. Do not show the code, only the graph.
+
+```{r Graph, echo=FALSE}
+library (ggplot2)
+x<-seq(-3,3) #values for x
+y<-a*x^2+b*x+k #values for y
+
+ggplot(
+  #values
+  data.frame(x,y), aes(x,y)) +
+  #defining the color for the quadratic function
+  geom_line(color = "blue") + 
+  #an horizontal line in the origin
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") + 
+  #graph labeling
+  labs(title = "Quadratic Equation Graph",
+       x = "x",
+       y = "f(x)")
+
+```
+
+## Excercise 3
+
+Generate a PDF report.
+
+To do it i modified the yaml to 
+
+title: "Problem set 1: Quadratic equation"
+author: "Frances Aponte"
+format: pdf
+output:
+  pdf_document:
+    latex_engine: xelatex
+editor: visual
+
+```{r}
+quarto::render("Problem set 1: Quadratic equation.qdm", output_dir = "output_directory", output_format = "pdf_document")
+```
+
+
+
+## Excercise 4
+Erase the PDF report and reproduce it but this time using $a=1,b=2,c=5$.
+
+
+
+
+
+
+
+
+
