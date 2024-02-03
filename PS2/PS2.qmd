@@ -1,0 +1,109 @@
+---
+title: "PS2 "
+author: "Frances Aponte"
+format: pdf
+editor: visual
+---
+
+Data visualization problem set
+
+### Measles
+
+1. Load the dslabs package and figure out what is in the us_contagious_diseases dataset. Create a data frame, call it avg, that has a column for year, and a rate column containing the cases of Measles per 10,000 people per year in the US. Because we start in 1928, exclude Alaska and Hawaii. Make sure to take into account the number of weeks reporting each year. If a week was not report, it should not be included in the calculation of the rate.
+
+```{r}
+library(tidyverse)
+library(dslabs)
+```
+
+```{r}
+
+#List of variables
+colnames(us_contagious_diseases)
+
+# List of Diseases
+unique(us_contagious_diseases$disease)
+
+```
+
+```{r}
+#filter the rows for measles, remove alaska and hawaii, weeks reporting greater than 0 is to remove data that did not report in any week
+
+avg<- us_contagious_diseases |> filter(disease == "Measles" & !state %in% c("Alaska","Hawaii") & weeks_reporting > 0) |>
+  group_by(year) |>
+  summarize(rate = sum(count/weeks_reporting*52, na.rm = TRUE)/sum(population)*10000)
+
+avg
+
+#Year 
+min(avg$year)
+max(avg$year)
+
+# we are dividing by weeks reporting to create a rate with the counts because not all statets have the same amount of week reporting. 
+
+#table(avg$disease)
+```
+
+2. Use the data frame avg to make a trend plot showing the cases rate for Measles per year. Add a vertical line showing the year the Measles vaccines was introduced.
+
+```{r}
+avg |> 
+  ggplot(aes(year,rate)) +  
+  geom_line() + 
+  geom_vline(xintercept = 1963, linetype = "dashed", color = "red") +
+  labs(x="Year", y="Rate", title="Measles cases rate per year in the US") + 
+  theme_bw() 
+```
+
+3. Add a grey trend line for each state to the plot above. Use a transformation that keeps the high rates from dominating the figure.
+
+```{r}
+avg<- us_contagious_diseases |> filter(disease == "Measles" & !state %in% c("Alaska","Hawaii") & weeks_reporting > 0) |>
+  group_by(year,state) |>
+  summarize(rate = sum(count/weeks_reporting*52, na.rm = TRUE)/sum(population)*10000)
+
+
+avg |> 
+  ggplot(aes(year, rate)) +  
+  geom_line() + 
+  geom_vline(xintercept = 1963, linetype = "dashed", color = "red") +
+  geom_smooth(method = "lm", formula = y ~ log(x), se = FALSE, color = "grey50") +
+  labs(x="Year", y="Rate", title="Measles cases rate per year in the US") + 
+  theme_bw()
+
+
+```
+
+4. In the plot above we can't tell which state is which curve. Using color would be challenging as it is hard if not impossible to find 48 colors humans can distinguish. To make a plot where you can compare states knowing which is which, use one of the axis for state and the other for year, and then use hue or intensity as a visual cue for rates. Use a sqrt transformation to avoid the higher rates taking up all the color scale. Use grey to denote missing data. Order the states based on their highest peak. You can include Hawaii and Alaska.
+
+```{r}
+## use this color pallete
+reds <- RColorBrewer::brewer.pal(9, "Reds")
+
+#Data organized by state (higher rates to lower rates)
+avg <- 
+  us_contagious_diseases |> 
+  filter(disease == "Measles" & weeks_reporting > 0) |>
+  group_by(year, state) |>
+  summarize(rate = sum(count/weeks_reporting*52, na.rm = TRUE)/sum(population)*10000)
+
+avg |> 
+  ggplot(aes(year, state, fill=sqrt(rate))) +  
+  geom_tile(color= "grey80")+
+  geom_vline(xintercept = 1963, linetype = "dashed", color = "blue") +
+  scale_fill_gradientn(colors=reds)+
+  labs(x="Year", y="State", title="Measles cases rate per year in the US") + 
+  theme_bw() + 
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = seq(1930, 2002, by = 5),expand=c(0,0))
+```
+
+5. Incorporate one or more of the figures you just created to write a 2-3 page report, using quarto, describing the evidence these data show about vaccines in controlling disease. Upload your report and code to a GitHub repository.
+
+
+
+
+
+
+
+
