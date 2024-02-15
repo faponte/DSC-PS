@@ -10,8 +10,7 @@ We plan to explore the relationship between COVID-19 death rates and vaccination
 1. Get an API key from the US Census at https://api.census.gov/data/key_signup.html. Save it an object called census_key.
 
 ```{r}
-census_key<- "a36a580b2520bd992aa8b77a767e8198de849824"
-#source("census_key.R")
+source("census_key.R")
 ```
 
 2. Use an internet search to find information about the US Census APIs to obtain vintage population estimates. Define a variable called api with the URL.
@@ -139,17 +138,18 @@ population<-left_join(population,cdc_regions, by="state_name")
 10. Go to https://data.cdc.gov/ and learn about the CDC API for COVID-19 data. Find an API that provides state level data from SARS-COV2 cases and store it in a data frame.
 
 ```{r}
-api1<-"https://data.cdc.gov/resource/pwn4-m3yp.json"
+api<-"https://data.cdc.gov/resource/pwn4-m3yp.json"
 ```
 
 ```{r}
 library(httr2)
 library(jsonlite)
 
-covid<- request(api1) |> 
-  req_url_query("$limit" = 10000000) |>
-  req_perform() |> resp_body_string() |> 
-  fromJSON(flatten = TRUE)
+covid_cases<- request(api) |> 
+              req_url_query("$limit" = 10000000) |>
+              req_perform() |> 
+              resp_body_string() |> 
+              fromJSON(flatten = TRUE)
 ```
 
 
@@ -162,13 +162,14 @@ pop_states <- population |>
               pull(state) |> 
               unique()
 
-state_cases <- covid |> 
-filter(state%in%pop_states) |> 
+state_cases <- covid_cases |> 
+               filter(state%in%pop_states) |> 
 mutate(df=as_date(ymd_hms(end_date))) |>
 mutate(new_cases = parse_number(new_cases)) |>
-mutate(mmwr_year = epiyear(df), mmwr_week = epiweek(df)) |> 
-select(state, mmwr_year, mmwr_week, new_cases) |>
-arrange(state,mmwr_year, mmwr_week)
+mutate(epidemiological_year = epiyear(df), epidemiological_week = epiweek(df)) |> filter(epidemiological_year==2020 | epidemiological_year==2021)|>
+select(state, epidemiological_year, epidemiological_week, new_cases) |>
+arrange(state,epidemiological_year, epidemiological_week) |>
+filter(!is.na(new_cases))
 ```
 
 12. Now repeat the same exercise for hospitalizations. However, before you start, notice the code for extracting the data is the same as in the previous exercise except for the API URL. Write a function that takes an API URL and returns the data in a data frame.
@@ -181,9 +182,13 @@ library(lubridate)
 get_cdc_data <- function(api){
   data_json<- request(api) |> 
   req_url_query("$limit" = 10000000) |>
-  req_perform() |> resp_body_string() |> 
+  req_perform() |> 
+  resp_body_string() |> 
   fromJSON(flatten = TRUE)
+  
+  return(data_json)
 }
+
 ```
 
 13. Now use the function to get the raw hospital data. Examine the data once you have it to determine if its daily or weekly.
@@ -200,23 +205,24 @@ hosp_raw <- get_cdc_data(api_hosp)
 regions<-c("R1","R2","R3","R4","R5","R6","R7","R8","R9","R10")
 
 hosp <- hosp_raw |>
-  mutate(collection_date=as_date(ymd_hms(collection_date))) |> mutate(mmwr_year=epiyear(collection_date), 
-       mmwr_week = epiweek(collection_date)) |> 
+  mutate(collection_date=as_date(ymd_hms(collection_date))) |> mutate(epidemiological_year=epiyear(collection_date), 
+       epidemiological_week = epiweek(collection_date)) |> 
 select(collection_date, jurisdiction, 
-mmwr_year,mmwr_week, total_hospitalized_covid) |>
+epidemiological_year,epidemiological_week, total_hospitalized_covid) |>
 filter(!jurisdiction%in%regions) |> 
 rename(state=jurisdiction) |> 
-group_by(mmwr_week,mmwr_year, state)|>
-summarise(total_weekly_hospitalizations = sum(as.numeric(total_hospitalized_covid))) |> ungroup ()
+group_by(epidemiological_week,epidemiological_year, state)|>
+summarise(total_weekly_hospitalizations = sum(as.numeric(total_hospitalized_covid)))
+
 
 weekly_dat <- hosp_raw |> 
 mutate(collection_date=as_date(ymd_hms(collection_date))) |> 
-mutate(mmwr_year=epiyear(collection_date), mmwr_week = epiweek(collection_date)) |> select(collection_date, mmwr_year,mmwr_week) |> group_by(mmwr_year,mmwr_week) |> 
+mutate(epidemiological_year=epiyear(collection_date), epidemiological_week = epiweek(collection_date)) |> select(collection_date, epidemiological_year,epidemiological_week) |> group_by(epidemiological_year,epidemiological_week) |> 
 summarize(days_in_week = n_distinct(collection_date)) |> 
 filter(days_in_week < 7) |> 
+filter(epidemiological_year %in% c(2020, 2021))|>
 ungroup() |> print ()
 
-hosp<- hosp |> filter(!mmwr_year=="2020" & !mmwr_week=="31")
 
 ```
 
@@ -228,10 +234,11 @@ deaths_raw <- get_cdc_data(api_death)
 
 deaths <- deaths_raw |> 
 mutate(week_ending_date=as_date(ymd_hms(week_ending_date))) |>
-mutate(mmwr_year=epiyear(week_ending_date), 
-mmwr_week = epiweek(week_ending_date)) |>
+mutate(epidemiological_year=epiyear(week_ending_date), 
+epidemiological_week = epiweek(week_ending_date)) |>
 rename(state_name=state) |>
-select(mmwr_week,mmwr_year,state_name,covid_19_deaths)
+filter(epidemiological_year %in% c(2020, 2021))|>
+select(epidemiological_week,epidemiological_year,state_name,covid_19_deaths)
 ```
 
 16. Obtain vaccination data. Keep the variables series_complete and booster along with state and date. Remember we will later want to join with the others.
@@ -243,10 +250,11 @@ api_vaccines<- "https://data.cdc.gov/resource/rh2h-3yt2.json"
 vax_raw <- get_cdc_data(api_vaccines)
 
 vax <- vax_raw |> mutate(date=as_date(ymd_hms(date))) |> 
-mutate(mmwr_year=epiyear(date), mmwr_week = epiweek(date)) |> 
+mutate(epidemiological_year=epiyear(date), epidemiological_week = epiweek(date)) |> 
 rename(state=location) |>
-select(mmwr_week,mmwr_year,state,date,series_complete_daily,booster_daily) |>
-group_by(mmwr_week,mmwr_year,state) |> 
+filter(epidemiological_year %in% c(2020, 2021)) |>
+select(epidemiological_week,epidemiological_year,state,date,series_complete_daily,booster_daily) |>
+group_by(epidemiological_week,epidemiological_year,state) |> 
 summarise(total_weekly_vac = sum(as.numeric(series_complete_daily)),
 total_weekly_boost = sum(as.numeric(booster_daily))) |> 
 ungroup ()
@@ -257,52 +265,70 @@ ungroup ()
 ```{r}
 all_dates <- data.frame(date = seq(make_date(2020, 1, 25), make_date(2021, 12, 31), by = "week")) |>
   mutate(date = ceiling_date(date, unit = "week", week_start = 7) - days(1)) |>
-  mutate(mmwr_year = epiyear(date), mmwr_week = epiweek(date)) 
+  mutate(epidemiological_year = epiyear(date), epidemiological_week = epiweek(date)) 
 
-df1 <- cross_join(population, all_dates)
+dates_and_pop <- cross_join(population, all_dates)
 ```
 
 Use this to join all the tables in a way that preserves these dates. Call the final table dat.
 
 ```{r}
-dat <- left_join(df1, state_cases, by=c("mmwr_week","mmwr_year","state"))
 
-dat <- left_join(dat,hosp, by=c("mmwr_week","mmwr_year","state"))
+dat <- left_join(dates_and_pop, state_cases, by=c("epidemiological_week","epidemiological_year","state"))
 
-dat <- left_join(dat, deaths, by=c("mmwr_week","mmwr_year","state_name"))
+dat <- left_join(dat, hosp, by=c("epidemiological_week","epidemiological_year","state"))
 
-dat <- left_join(dat, vax, by=c("mmwr_week","mmwr_year","state"))
+dat <- left_join(dat, deaths, by=c("epidemiological_week","epidemiological_year","state_name"))
+
+dat <- left_join(dat, vax, by=c("epidemiological_week","epidemiological_year","state"))
 ```
 
 18. Plot a trend plot with cases per person for all states with color representing region.
 
 ```{r}
-dat |> ggplot(aes(x = state, y = new_cases, color = region)) +
+dat |> 
+  mutate(population=sum(`2020`,`2021`)) |>
+  mutate(cases_per_person = new_cases / population) |>
+  ggplot(aes(x = date, y = cases_per_person,color = region)) +
   geom_line() +
-  geom_point(size = 2) +
-  labs(title = "SARS-CoV-2 Cases per State",
-    x = "State",
-    y = "Total of Cases",
-    color = "Region") + 
-  theme_minimal() 
+  labs(x = "Date",
+       y = "Total of Cases",
+       color = "Region",
+       title = "COVID-19 Cases per Person by State") +
+  theme_bw() 
 ```
 
 19. Repeat the above for hospitalizations and deaths. Use pivot_longer and facet_wrap. Plot rates per 100,000 people. Place the plots on top of each other.
 
 ```{r}
-#dat |>
+# dat |>
+#   mutate(population=sum(`2020`,`2021`)) |>
+#   mutate(case_rate = new_cases / population * 100000,
+#          hosp_rate = new_hospitalizations / population * 100000,
+#          death_rate = covid_19_deaths / population * 100000) |>
+#   pivot_longer(cols = c(case_rate, hosp_rate, death_rate),
+#                names_to = "variable",
+#                values_to = "rate_per_person") |>
+#   ggplot(aes(x = date, y = rate_per_person, color = region)) +
+#   geom_line() +
+#   facet_wrap(~ variable, nrow = 3, scales = "free_y") +
+#   labs(x = "Date",
+#        y = "Rate per 100,000 Persons",
+#        color = "Region",
+#        title = "COVID-19 Cases, Hospitalizations, and Deaths Per 100,000 Persons by State") +
+#   theme_bw()
 ```
 
 20. For the period January 1 to July 1, 2021 compute the deaths per day per 100,000 people in each state as well as the vaccination rate (primary series) by September 1st. Plot these against each other.
 
 ```{r}
-#dat |>
+#dat 
 ```
 
 21. Repeat the exercise for the booster for October 1 to December 31, 2021.
 
 ```{r}
-#dat |>
+#dat
 ```
 
 
